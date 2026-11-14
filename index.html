@@ -285,12 +285,23 @@
 .part-control-grid .knob{width:46px;height:46px}
 @media(max-width:480px){.part-control-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.part-control-grid .knob-pair{gap:3px}.part-control-grid .knob-unit{flex:0 1 48px;min-width:0;width:auto}.part-control-grid .knob{width:42px;height:42px}.part-control-grid .knob-label{font-size:10px}}
 @media(max-width:360px){.part-control-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}.part-control-grid .knob-unit{flex:0 1 40px;min-width:0;width:auto}.part-control-grid .knob{width:37px;height:37px}.part-control-grid .knob-label{font-size:9px}}
+
+/* v5: preserve comfortable tab insets; long patch names may truncate. */
+.part-tabs .part-select{padding:8px 8px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.part-tabs .part-tab-label{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:480px){.part-tabs .part-select{padding:7px 6px}}
+@media(max-width:360px){.part-tabs .part-select{padding:7px 5px}}
+/* Show Temporary Performance as a display overlay, never as a dropdown option. */
+.performance-select-wrap{position:relative;min-width:0;width:100%}
+.performance-select-wrap select{width:100%;display:block}
+.performance-select-current{position:absolute;left:1px;top:1px;bottom:1px;right:24px;display:flex;align-items:center;padding:0 5px;background:#111720;color:var(--text);font-size:14px;line-height:1.2;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;pointer-events:none;border-radius:6px}
+.performance-select-current[hidden]{display:none}
 </style></head>
 <body><div class="wrap"><header class="top"><div class="brand">GO:PIANO Performance Editor</div><div class="status hidden" id="midiStatus">Not connected</div></header><main>
 <section class="card"><div class="cardhead">MIDI</div><div class="midirow"><div class="field"><label for="midiOutput">Device</label><select id="midiOutput"><option value="">Not connected</option></select></div><button class="btn" id="connectBtn">Connect</button></div><div class="hidden" id="midiNotice"></div></section>
 <section class="card monitor-card"><div class="monitor-head"><div class="cardhead">MIDI Monitor</div><button class="btn" id="clearLogBtn" type="button">Clear</button></div><div class="txlog" id="txLog" aria-label="Outgoing MIDI messages"></div><div id="editorStatus">Not connected</div></section>
 <div class="preset-wheel-row"><div class="modwheel-wrap" aria-label="Modulation control"><span class="modwheel-label">MOD</span><div class="modwheel" id="modWheel" role="slider" tabindex="0" aria-label="Mod Wheel" aria-orientation="vertical" aria-valuemin="0" aria-valuemax="127" aria-valuenow="0"><div class="modwheel-fill" id="modWheelFill"></div></div></div>
-<section class="card preset-card"><div class="cardhead preset-title">Performance</div><div class="preset-row"><select id="presetSelect" aria-label="Performance" disabled></select><button type="button" class="btn" id="readBtn" disabled>Read</button><button type="button" class="btn" id="savePresetBtn" disabled>Save</button></div>
+<section class="card preset-card"><div class="cardhead preset-title">Performance</div><div class="preset-row"><div class="performance-select-wrap"><select id="presetSelect" aria-label="Performance" disabled></select><span id="currentPerformanceLabel" class="performance-select-current" aria-hidden="true" hidden></span></div><button type="button" class="btn" id="readBtn" disabled>Read</button><button type="button" class="btn" id="savePresetBtn" disabled>Save</button></div>
 <div class="performance-data"><div class="field"><label>Reverb Level</label><div class="reverbbox"><button type="button" class="btn stepbtn" id="reverbMinus">−</button><span class="digital-display dot-matrix" id="reverbValue" aria-label="Reverb Level"></span><button type="button" class="btn stepbtn" id="reverbPlus">+</button><input type="hidden" id="reverb" value="0"></div></div><div class="field tempo-control"><label for="tempo">Tempo (BPM)</label><input type="number" id="tempo" value="120" min="20" max="250" step="1" inputmode="numeric"></div></div></section></div>
 <section class="card" id="partsCard"><div class="part-tabs"><button type="button" class="part-select active-part" id="selectPart1" aria-pressed="true">Part 1<span class="part-tab-label" id="part1TabPatch">—</span></button><button type="button" class="part-select " id="selectPart2" aria-pressed="false">Part 2<span class="part-tab-label" id="part2TabPatch">—</span></button><button type="button" class="part-select " id="selectPart3" aria-pressed="false">Part 3<span class="part-tab-label" id="part3TabPatch">—</span></button><button type="button" class="part-select " id="selectPart4" aria-pressed="false">Part 4<span class="part-tab-label" id="part4TabPatch">—</span></button></div>
 <div class="part part-card " id="part1Card">
@@ -377,25 +388,24 @@ function setDisconnected(){
  deviceVerified=false;identityPending=false;identityOutput=null;clearTimeout(identityTimer);
  ++readGeneration;++nameReadGeneration;clearTimeout(recallReadTimer);
  receivedFields.clear();currentLoaded=false;pendingReply=false;presetNames.fill(null);partPatchBytes.fill(null);temporaryName='';
- $('presetSelect').replaceChildren();$('presetSelect').disabled=true;$('savePresetBtn').disabled=true;$('readBtn').disabled=true;updateMidiUi();
+ $('presetSelect').replaceChildren();$('presetSelect').disabled=true;$('currentPerformanceLabel').hidden=true;$('currentPerformanceLabel').textContent='';$('savePresetBtn').disabled=true;$('readBtn').disabled=true;updateMidiUi();
 }
 function slotLabel(i){const n=presetNames[i];return String(i+1).padStart(2,'0')+'. '+(n===null?'reading…':(n.trim()||'empty'));}
 function updateSelects(preserve=true){const sel=$('presetSelect'),prev=sel.value;
- // Before receiving the Temporary Performance name, the field must be blank and inactive.
- if(!deviceVerified||!currentLoaded){sel.replaceChildren();sel.disabled=true;$('savePresetBtn').disabled=true;$('readBtn').disabled=!deviceVerified;return;}
+ const display=$('currentPerformanceLabel');
+ // Temporary Performance is displayed above the native select, without inserting
+ // an extra option. Thus the actual native dropdown contains only Empty + slots 1–32.
+ if(!deviceVerified||!currentLoaded){sel.replaceChildren();sel.disabled=true;display.hidden=true;display.textContent='';$('savePresetBtn').disabled=true;$('readBtn').disabled=!deviceVerified;return;}
  const selected=preserve&&(prev==='empty'||/^\d+$/.test(prev)&&Number(prev)<32)?prev:'current';
  sel.replaceChildren();
  const empty=document.createElement('option');empty.value='empty';empty.textContent='Empty';sel.appendChild(empty);
  for(let i=0;i<32;i++){const o=document.createElement('option');o.value=String(i);o.textContent=slotLabel(i);o.disabled=presetNames[i]===null;sel.appendChild(o);}
- // Temporary Performance is a display-only selection, not an item in the menu.
- // Add it only while the current unslotted Performance is displayed, and keep it
- // hidden from the dropdown to avoid duplicating a numbered name or Empty.
  if(selected==='current'){
-  const current=document.createElement('option');current.value='current';
-  current.textContent=temporaryName||'(unnamed)';current.hidden=true;current.disabled=true;
-  sel.appendChild(current);
- }
- sel.value=selected;sel.disabled=false;
+  // A select with selectedIndex=-1 still opens its normal picker, but displays no
+  // option itself. Our non-interactive overlay shows the temporary name instead.
+  sel.selectedIndex=-1;display.textContent=temporaryName||'(unnamed)';display.hidden=false;
+ }else{sel.value=selected;display.hidden=true;display.textContent='';}
+ sel.disabled=false;
  const sav=$('saveSlot'),sPrev=sav.value;fillSelect(sav,Array.from({length:32},(_,i)=>i),String,i=>slotLabel(i));sav.value=sPrev&&Number(sPrev)<32?sPrev:'0';
  $('savePresetBtn').disabled=!fullyRead();$('readBtn').disabled=false;
 }
@@ -625,6 +635,9 @@ function handleMidiMessage(event){const d=event?.data;
 function recallSlot(slot){const ch=0;const out=chosenMidiOutput();if(!out)return;
  // The user's GO:PIANO has Performance Control Channel set to MIDI channel 1.
  sendData([0xB0|ch,0,0x55]);sendData([0xB0|ch,0x20,0]);sendData([0xC0|ch,slot]);
+ // The instrument resets modulation on a Performance recall. Mirror that reset
+ // in the display only: do NOT send any extra CC1 messages.
+ modWheelPosition=0;syncModWheel();
  status('Recalling User Performance '+(slot+1)+'…');clearTimeout(recallReadTimer);recallReadTimer=setTimeout(readCurrent,500);
 }
 async function sendDump(lines,label,resetMod=false){const out=chosenMidiOutput();if(!out)return;status('Sending '+label+'…');
