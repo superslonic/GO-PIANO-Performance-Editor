@@ -266,7 +266,10 @@
 .performance-data label{margin-bottom:5px}
 .tempo-control input{text-align:center;font-size:18px;font-weight:700;height:34px;min-height:34px;max-width:100%}
 .preset-row select{font-size:14px}
-#readBtn{padding:5px 13px;min-height:29px;font-size:12px}
+#readBtn,#savePresetBtn{box-sizing:border-box;min-width:88px;width:88px;height:36px;min-height:36px;padding:7px 8px;font-size:15px;border-width:2px}
+#readBtn{background:#27313f;border-color:#08090b;box-shadow:inset 0 -3px 0 rgba(0,0,0,.22);color:var(--text)}
+.preset-row{grid-template-columns:minmax(0,1fr) auto auto;gap:6px}
+@media(max-width:480px){#readBtn,#savePresetBtn{width:clamp(61px,17vw,88px);min-width:clamp(61px,17vw,88px);height:var(--compact-control-height);min-height:var(--compact-control-height);font-size:clamp(12px,3.6vw,15px);padding:0 5px}}
 .monitor-card{padding-top:8px;padding-bottom:8px}
 .monitor-head{display:flex;justify-content:space-between;align-items:center}
 .monitor-card .cardhead{margin:0}
@@ -275,12 +278,19 @@
 .preset-wheel-row .modwheel-wrap{min-height:180px}
 @media(max-width:480px){.part-control-grid{grid-template-columns:minmax(100px,1fr) minmax(0,1.7fr);gap:5px}.part-tabs .part-select{padding:7px 2px}.part-control-grid .knob{width:42px;height:42px}.part-control-grid .knob-unit{flex-basis:47px}.part-control-grid .knob-label{font-size:10px}.part-control-grid .octcontrol{gap:2px}.part-control-grid .octcontrol .stepbtn{width:30px;min-width:30px;flex-basis:30px}}
 @media(max-width:360px){.part-control-grid{grid-template-columns:100px minmax(0,1fr)}.part-control-grid .knob{width:38px;height:38px}.part-control-grid .knob-unit{flex-basis:41px}.part-control-grid .knob-label{font-size:9px}.part-control-grid .octcontrol .stepbtn{width:27px;min-width:27px;flex-basis:27px}.part-select{font-size:12px}.part-tab-label{font-size:9px}}
+/* v3: dedicate more room to Octave Shift and group the three knobs compactly. */
+.part-control-grid{grid-template-columns:minmax(115px,1fr) auto;gap:6px}
+.part-control-grid .knob-pair{justify-content:flex-end;gap:4px}
+.part-control-grid .knob-unit{flex:0 0 48px;width:48px}
+.part-control-grid .knob{width:43px;height:43px}
+@media(max-width:480px){.part-control-grid{grid-template-columns:minmax(100px,1fr) auto;gap:4px}.part-control-grid .knob-pair{gap:2px}.part-control-grid .knob-unit{flex:0 0 42px;width:42px}.part-control-grid .knob{width:40px;height:40px}.part-control-grid .knob-label{font-size:10px}}
+@media(max-width:360px){.part-control-grid .knob-unit{flex:0 0 39px;width:39px}.part-control-grid .knob{width:37px;height:37px}.part-control-grid .knob-label{font-size:9px}.part-control-grid{grid-template-columns:minmax(94px,1fr) auto;gap:3px}}
 </style></head>
 <body><div class="wrap"><header class="top"><div class="brand">GO:PIANO Performance Editor</div><div class="status hidden" id="midiStatus">Not connected</div></header><main>
 <section class="card"><div class="cardhead">MIDI</div><div class="midirow"><div class="field"><label for="midiOutput">Device</label><select id="midiOutput"><option value="">Not connected</option></select></div><button class="btn" id="connectBtn">Connect</button></div><div class="hidden" id="midiNotice"></div></section>
 <section class="card monitor-card"><div class="monitor-head"><div class="cardhead">MIDI Monitor</div><button class="btn" id="clearLogBtn" type="button">Clear</button></div><div class="txlog" id="txLog" aria-label="Outgoing MIDI messages"></div><div id="editorStatus">Not connected</div></section>
 <div class="preset-wheel-row"><div class="modwheel-wrap" aria-label="Modulation control"><span class="modwheel-label">MOD</span><div class="modwheel" id="modWheel" role="slider" tabindex="0" aria-label="Mod Wheel" aria-orientation="vertical" aria-valuemin="0" aria-valuemax="127" aria-valuenow="0"><div class="modwheel-fill" id="modWheelFill"></div></div></div>
-<section class="card preset-card"><div class="cardhead-row"><div class="cardhead">Performance</div><button type="button" class="btn" id="readBtn" disabled>Read</button></div><div class="preset-row"><select id="presetSelect" aria-label="Performance" disabled></select><button type="button" class="btn" id="savePresetBtn" disabled>Save</button></div>
+<section class="card preset-card"><div class="cardhead preset-title">Performance</div><div class="preset-row"><select id="presetSelect" aria-label="Performance" disabled></select><button type="button" class="btn" id="readBtn" disabled>Read</button><button type="button" class="btn" id="savePresetBtn" disabled>Save</button></div>
 <div class="performance-data"><div class="field"><label>Reverb Level</label><div class="reverbbox"><button type="button" class="btn stepbtn" id="reverbMinus">−</button><span class="digital-display dot-matrix" id="reverbValue" aria-label="Reverb Level"></span><button type="button" class="btn stepbtn" id="reverbPlus">+</button><input type="hidden" id="reverb" value="0"></div></div><div class="field tempo-control"><label for="tempo">Tempo (BPM)</label><input type="number" id="tempo" value="120" min="20" max="250" step="1" inputmode="numeric"></div></div></section></div>
 <section class="card" id="partsCard"><div class="part-tabs"><button type="button" class="part-select active-part" id="selectPart1" aria-pressed="true">Part 1<span class="part-tab-label" id="part1TabPatch">—</span></button><button type="button" class="part-select " id="selectPart2" aria-pressed="false">Part 2<span class="part-tab-label" id="part2TabPatch">—</span></button><button type="button" class="part-select " id="selectPart3" aria-pressed="false">Part 3<span class="part-tab-label" id="part3TabPatch">—</span></button><button type="button" class="part-select " id="selectPart4" aria-pressed="false">Part 4<span class="part-tab-label" id="part4TabPatch">—</span></button></div>
 <div class="part part-card " id="part1Card">
@@ -339,7 +349,7 @@ function sendLogged(out,data){if(!out)throw new Error('Not connected');const b=A
 function messageFullAddress(address,data){return [0xF0,0x41,0x10,0,0,0,0x3D,0x12,...address,...data,0,0xF7];}
 function message(address,data){return messageFullAddress([0x10,0x00,...address],data);}
 function rq(address,count){return [0xF0,0x41,0x10,0,0,0,0x3D,0x11,...address,0,0,0, count,0,0xF7];}
-function sendData(data){const out=chosenMidiOutput();if(!out)return false;try{sendLogged(out,data);return true;}catch(err){status('MIDI error: '+(err.message||String(err)));return false;}}
+function sendData(data){const out=chosenMidiOutput();if(!out||!deviceVerified)return false;try{sendLogged(out,data);return true;}catch(err){status('MIDI error: '+(err.message||String(err)));return false;}}
 function sendDt(address,data){return sendData(message(address,data));}
 let selectedPart=1;const partPatchBytes=Array.from({length:4},()=>null);
 let temporaryName='',pendingReply=false,currentLoaded=false;
@@ -349,17 +359,33 @@ function fullyRead(){return requiredFields.every(k=>receivedFields.has(k));}
 let readGeneration=0,nameReadGeneration=0,recallReadTimer=null;
 let presetNames=Array(32).fill(null);
 let midiAccess=null,currentMidiInput=null;
+let deviceVerified=false,identityPending=false,identityTimer=null,identityOutput=null;
 function allInputs(){const list=[];if(midiAccess?.inputs)midiAccess.inputs.forEach(i=>list.push(i));return list;}
 function selectMidiInput(){if(currentMidiInput)currentMidiInput.onmidimessage=null;currentMidiInput=null;const list=allInputs(),out=chosenMidiOutput();if(!list.length)return;let input=out?list.find(i=>(i.name||'').toLowerCase()===(out.name||'').toLowerCase()):null;if(!input)input=list.find(i=>/bluetooth/i.test(i.name||''))||list[0];currentMidiInput=input;input.onmidimessage=handleMidiMessage;}
-function refreshMidiOutputs(){if(!midiAccess)return;const sel=$('midiOutput'),prev=sel.value;const outputs=[];midiAccess.outputs.forEach(x=>outputs.push(x));fillSelect(sel,outputs,x=>x.id,x=>x.name||x.id);if(outputs.some(x=>x.id===prev))sel.value=prev;else if(outputs.length)sel.value=outputs[0].id;updateMidiUi();selectMidiInput();}
+function refreshMidiOutputs(){if(!midiAccess)return;
+ const sel=$('midiOutput'),prev=sel.value,previous=midiAccess.outputs.get(prev),prevName=previous?.name||'';
+ const outputs=[];midiAccess.outputs.forEach(x=>outputs.push(x));
+ if(!outputs.length){sel.replaceChildren();const opt=document.createElement('option');opt.value='';opt.textContent='No MIDI outputs found';sel.appendChild(opt);setDisconnected();return;}
+ fillSelect(sel,outputs,x=>x.id,x=>x.name||x.id);
+ if(outputs.some(x=>x.id===prev)&&!(/session\s*1/i.test(prevName)&&outputs.some(x=>/bluetooth/i.test(x.name||''))))sel.value=prev;
+ else sel.value=(outputs.find(x=>/bluetooth/i.test(x.name||''))||outputs.find(x=>/go.?piano|roland|midi/i.test(x.name||''))||outputs[0]).id;
+ if(deviceVerified&&identityOutput!==chosenMidiOutput())setDisconnected();
+ updateMidiUi();selectMidiInput();}
 function chosenMidiOutput(){if($('midiOutput').value==='ble-midi')return bleCharacteristic?bleMidiOutput:null;return midiAccess?.outputs?.get($('midiOutput').value)||null;}
 function updateMidiUi(){$('midiStatus').textContent=chosenMidiOutput()?.name||'Not connected';}
-function setDisconnected(){receivedFields.clear();currentLoaded=false;pendingReply=false;presetNames.fill(null);partPatchBytes.fill(null);temporaryName='';$('presetSelect').replaceChildren();$('presetSelect').disabled=true;$('savePresetBtn').disabled=true;$('readBtn').disabled=true;updateMidiUi();}
+function setDisconnected(){
+ deviceVerified=false;identityPending=false;identityOutput=null;clearTimeout(identityTimer);
+ ++readGeneration;++nameReadGeneration;clearTimeout(recallReadTimer);
+ receivedFields.clear();currentLoaded=false;pendingReply=false;presetNames.fill(null);partPatchBytes.fill(null);temporaryName='';
+ $('presetSelect').replaceChildren();$('presetSelect').disabled=true;$('savePresetBtn').disabled=true;$('readBtn').disabled=true;updateMidiUi();
+}
 function slotLabel(i){const n=presetNames[i];return String(i+1).padStart(2,'0')+'. '+(n===null?'reading…':(n.trim()||'empty'));}
-function updateSelects(preserve=false){const sel=$('presetSelect'),prev=sel.value;
- sel.replaceChildren();if(!chosenMidiOutput()){sel.disabled=true;return;}
- const current=document.createElement('option');current.value='current';current.textContent=temporaryName||'Current Performance';sel.appendChild(current);
+function updateSelects(preserve=true){const sel=$('presetSelect'),prev=sel.value;
+ // Before receiving the Temporary Performance name, the field must be blank and inactive.
+ if(!deviceVerified||!currentLoaded){sel.replaceChildren();sel.disabled=true;$('savePresetBtn').disabled=true;$('readBtn').disabled=!deviceVerified;return;}
+ sel.replaceChildren();
  const empty=document.createElement('option');empty.value='empty';empty.textContent='Empty';sel.appendChild(empty);
+ const current=document.createElement('option');current.value='current';current.textContent=temporaryName;sel.appendChild(current);
  for(let i=0;i<32;i++){const o=document.createElement('option');o.value=String(i);o.textContent=slotLabel(i);o.disabled=presetNames[i]===null;sel.appendChild(o);}
  sel.value=preserve&&[...sel.options].some(o=>o.value===prev)?prev:'current';sel.disabled=false;
  const sav=$('saveSlot'),sPrev=sav.value;fillSelect(sav,Array.from({length:32},(_,i)=>i),String,i=>slotLabel(i));sav.value=sPrev&&Number(sPrev)<32?sPrev:'0';
@@ -426,7 +452,7 @@ function renderDisplays(){renderReverbMatrix('reverbValue',$('reverb').value);fo
 let modWheelPosition=0;
 function syncModWheel(){const el=$('modWheel'),v=Math.max(0,Math.min(127,modWheelPosition|0));$('modWheelFill').style.height=(v/127*100)+'%';el.setAttribute('aria-valuenow',String(v));}
 function setModWheelFromPointer(e){const el=$('modWheel'),r=el.getBoundingClientRect();if(!r.height)return;const value=Math.round(Math.max(0,Math.min(1,(r.bottom-e.clientY)/r.height))*127);setModWheel(value);}
-function setModWheel(v){const next=Math.max(0,Math.min(127,Math.round(v)));if(modWheelPosition===next)return;modWheelPosition=next;syncModWheel();sendData([0xB0,0x01,next]);}
+function setModWheel(v){const next=Math.max(0,Math.min(127,Math.round(v)));if(modWheelPosition===next)return;modWheelPosition=next;syncModWheel();sendData([0xB0|(selectedPart-1),0x01,next]);}
 let wheelDown=false;
 $('modWheel').addEventListener('pointerdown',e=>{wheelDown=true;$('modWheel').setPointerCapture?.(e.pointerId);setModWheelFromPointer(e);e.preventDefault();});
 $('modWheel').addEventListener('pointermove',e=>{if(wheelDown)setModWheelFromPointer(e);});
@@ -456,7 +482,7 @@ function syncAllKnobs(){Object.keys(knobConfigs).forEach(syncKnob);}
 
 function syncAllKnobs(){Object.keys(knobConfigs).forEach(syncKnob);}
 function setKnobValue(key,value,transmit=false){const val=knobClamp(value),old=knobVal(key);$(key).value=String(val);syncKnob(key);
- if(transmit&&val!==old){const c=knobConfigs[key];const offset={level:0x07,pan:0x08,cutoff:0x11}[c.type];knobRecentWrite[key]=Date.now();sendDt([0x20+c.part-1,offset],[val]);}
+ if(transmit&&val!==old){const c=knobConfigs[key];const cc={level:7,pan:10,cutoff:74}[c.type];knobRecentWrite[key]=Date.now();sendData([0xB0|(c.part-1),cc,val]);}
  return val;}
 function showKnobReadout(el,key){
  if(!$('knobModal').hidden)return;
@@ -560,19 +586,29 @@ function changeReverb(delta){const el=$('reverb'),v=Math.max(0,Math.min(10,Numbe
 for(const [id,d] of [['reverbMinus',-1],['reverbPlus',1]])$(id).addEventListener('click',()=>changeReverb(d));
 $('tempo').addEventListener('change',()=>{const n=Number($('tempo').value);if(!Number.isInteger(n)||n<20||n>250){status('Tempo: enter a BPM value from 20 to 250.');return;}sendDt([0x60,0x54],[Math.floor(n/16),n%16]);});
 const READ_ADDRESSES=[[0x10,0,0,0,12],[0x10,0,6,1,1],...Array.from({length:4},(_,i)=>[0x10,0,0x20+i,4,14]),...Array.from({length:4},(_,i)=>[0x10,0,0x50+i,0,1]),[0x10,0,0x60,0x54,2]];
-function readCurrent(){const out=chosenMidiOutput();if(!out)return;receivedFields.clear();updateSelects(true);const gen=++readGeneration;status('Reading current Performance…');
+function readCurrent(){const out=chosenMidiOutput();if(!out||!deviceVerified)return;receivedFields.clear();updateSelects(true);const gen=++readGeneration;status('Reading current Performance…');
  READ_ADDRESSES.forEach((item,i)=>setTimeout(()=>{if(gen!==readGeneration||chosenMidiOutput()!==out)return;sendData(rq(item.slice(0,4),item[4]));},i*(out===bleMidiOutput?70:25)));
 }
-function readNames(){const out=chosenMidiOutput();if(!out)return;const gen=++nameReadGeneration;for(let i=0;i<32;i++)setTimeout(()=>{if(gen!==nameReadGeneration||chosenMidiOutput()!==out)return;sendData(rq([0x20,i,0,0],12));},350+i*(out===bleMidiOutput?75:32));}
-function beginRead(){if(!chosenMidiOutput())return;receivedFields.clear();currentLoaded=false;temporaryName='';presetNames.fill(null);partPatchBytes.fill(null);updateSelects();readCurrent();readNames();}
+function readNames(){const out=chosenMidiOutput();if(!out||!deviceVerified)return;const gen=++nameReadGeneration;for(let i=0;i<32;i++)setTimeout(()=>{if(gen!==nameReadGeneration||chosenMidiOutput()!==out)return;sendData(rq([0x20,i,0,0],12));},350+i*(out===bleMidiOutput?75:32));}
+function beginRead(){if(!chosenMidiOutput()||!deviceVerified)return;receivedFields.clear();currentLoaded=false;temporaryName='';presetNames.fill(null);partPatchBytes.fill(null);updateSelects();readCurrent();readNames();}
 $('readBtn').addEventListener('click',()=>{readCurrent();readNames();});
 function decodeName(bytes){return String.fromCharCode(...bytes).replace(/\0/g,'').trimEnd();}
 function setOctave(part,raw){const v=Object.entries(OCTAVE_MAP).find(([label,byte])=>byte===raw);if(v){$('oct'+part).value=v[0];renderDisplays();}}
-function handleMidiMessage(event){const d=event?.data;if(!d||d.length<13||d[0]!==0xF0||d[1]!==0x41||d[6]!==0x3D||d[7]!==0x12)return;
+function handleMidiMessage(event){const d=event?.data;
+ if(!d||d.length<2)return;
+ // Universal Device Identity Reply: identify Roland (41) model GO:PIANO (3D).
+ if(d.length>=7&&d[0]===0xF0&&d[1]===0x7E&&d[3]===0x06&&d[4]===0x02){
+  if(!identityPending||chosenMidiOutput()!==identityOutput)return;
+  identityPending=false;clearTimeout(identityTimer);
+  if(d[5]===0x41&&d[6]===0x3D){deviceVerified=true;status('Roland GO:PIANO identified. Reading parameters…');beginRead();}
+  else{setDisconnected();status('Unsupported MIDI device. Connect a Roland GO:PIANO.');}
+  return;
+ }
+ if(!deviceVerified||d.length<13||d[0]!==0xF0||d[1]!==0x41||d[6]!==0x3D||d[7]!==0x12)return;
  const [a,b,c,e]=Array.from(d.slice(8,12));const value=Array.from(d.slice(12,-2));
  if(a===0x20&&b<32&&c===0&&e===0&&value.length>=12){presetNames[b]=decodeName(value.slice(0,12));updateSelects(true);return;}
  if(a!==0x10||b!==0)return;
- if(c===0&&e===0&&value.length>=12){temporaryName=decodeName(value.slice(0,12));currentLoaded=true;receivedFields.add('name');updateSelects();status('Current Performance: '+(temporaryName||'(unnamed)'));}
+ if(c===0&&e===0&&value.length>=12){temporaryName=decodeName(value.slice(0,12));currentLoaded=true;receivedFields.add('name');updateSelects(true);status('Current Performance: '+(temporaryName||'(unnamed)'));}
  else if(c===0x06&&e===0x01&&value.length){const raw=value[0],closest=Object.entries(REVERB_MAP).sort((x,y)=>Math.abs(x[1]-raw)-Math.abs(y[1]-raw))[0];$('reverb').value=closest[0];receivedFields.add('reverb');renderDisplays();updateSelects(true);}
  else if(c>=0x20&&c<=0x23&&e===0x04&&value.length>=14){const p=c-0x20+1;syncPartPatchFromReply(p,value[0],value[1],value[2]);setKnobValue('level'+p,value[3]);setKnobValue('pan'+p,value[4]);setKnobValue('cutoff'+p,value[13]);receivedFields.add('part'+p);updateSelects(true);}
  else if(c>=0x50&&c<=0x53&&e===0x00&&value.length){setOctave(c-0x50+1,value[0]);receivedFields.add('oct'+(c-0x50+1));updateSelects(true);}
@@ -639,6 +675,14 @@ async function saveUserPerformance(){const slot=Number($('saveSlot').value),name
 }
 $('confirmSaveBtn').addEventListener('click',saveUserPerformance);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('saveModal').hidden)closeSaveDialog();if(e.key==='Enter'&&!$('saveModal').hidden)saveUserPerformance();});
+function requestIdentity(){
+ // Do not read or write any parameters until an actual GO:PIANO replies.
+ setDisconnected();const out=chosenMidiOutput();if(!out){status('Not connected');return;}
+ identityOutput=out;identityPending=true;status('Waiting for GO:PIANO identity reply…');
+ try{sendLogged(out,[0xF0,0x7E,0x7F,0x06,0x01,0xF7]);}
+ catch(err){setDisconnected();status('Identity Request error: '+(err.message||String(err)));return;}
+ identityTimer=setTimeout(()=>{if(identityPending&&identityOutput===out){setDisconnected();status('GO:PIANO identity reply not received. No parameters were read.');}},5000);
+}
 renderDisplays();syncModWheel();showPart(1);setDisconnected();
 // Experimental Web Bluetooth BLE-MIDI transport, used when Web MIDI exposes no ports.
 const BLE_MIDI_SERVICE="03b80e5a-ede8-4b33-a751-6ce34ec4c700";
@@ -765,7 +809,7 @@ async function connectBleMidi(){
  const sel=$("midiOutput");sel.innerHTML="";
  const option=document.createElement("option");option.value="ble-midi";option.textContent=device.name||"GO:Piano MIDI (Bluetooth)";
  sel.appendChild(option);sel.value="ble-midi";
- currentMidiInput=null;updateMidiUi();beginRead();
+ currentMidiInput=null;updateMidiUi();requestIdentity();
 }
 $("connectBtn").addEventListener("click",async()=>{
  $("connectBtn").disabled=true;$("connectBtn").textContent="…";
@@ -775,11 +819,11 @@ $("connectBtn").addEventListener("click",async()=>{
   midiAccess=await navigator.requestMIDIAccess({sysex:true});
   midiAccess.onstatechange=()=>{refreshMidiOutputs();};
   refreshMidiOutputs();selectMidiInput();
-  if(chosenMidiOutput())beginRead();else status("No MIDI outputs found.");
+  if(chosenMidiOutput())requestIdentity();else {setDisconnected();status("No MIDI outputs found.");}
  }catch(err){status("Connection error: "+(err.message||String(err)));setDisconnected();}
  finally{$("connectBtn").disabled=false;$("connectBtn").textContent="Connect";}
 });
 $("midiOutput").addEventListener("change",()=>{
- updateMidiUi();selectMidiInput();if(chosenMidiOutput())beginRead();else setDisconnected();
+ updateMidiUi();selectMidiInput();if(chosenMidiOutput())requestIdentity();else setDisconnected();
 });
 </script></body></html>
