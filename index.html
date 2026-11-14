@@ -278,13 +278,13 @@
 .preset-wheel-row .modwheel-wrap{min-height:180px}
 @media(max-width:480px){.part-control-grid{grid-template-columns:minmax(100px,1fr) minmax(0,1.7fr);gap:5px}.part-tabs .part-select{padding:7px 2px}.part-control-grid .knob{width:42px;height:42px}.part-control-grid .knob-unit{flex-basis:47px}.part-control-grid .knob-label{font-size:10px}.part-control-grid .octcontrol{gap:2px}.part-control-grid .octcontrol .stepbtn{width:30px;min-width:30px;flex-basis:30px}}
 @media(max-width:360px){.part-control-grid{grid-template-columns:100px minmax(0,1fr)}.part-control-grid .knob{width:38px;height:38px}.part-control-grid .knob-unit{flex-basis:41px}.part-control-grid .knob-label{font-size:9px}.part-control-grid .octcontrol .stepbtn{width:27px;min-width:27px;flex-basis:27px}.part-select{font-size:12px}.part-tab-label{font-size:9px}}
-/* v3: dedicate more room to Octave Shift and group the three knobs compactly. */
-.part-control-grid{grid-template-columns:minmax(115px,1fr) auto;gap:6px}
-.part-control-grid .knob-pair{justify-content:flex-end;gap:4px}
-.part-control-grid .knob-unit{flex:0 0 48px;width:48px}
-.part-control-grid .knob{width:43px;height:43px}
-@media(max-width:480px){.part-control-grid{grid-template-columns:minmax(100px,1fr) auto;gap:4px}.part-control-grid .knob-pair{gap:2px}.part-control-grid .knob-unit{flex:0 0 42px;width:42px}.part-control-grid .knob{width:40px;height:40px}.part-control-grid .knob-label{font-size:10px}}
-@media(max-width:360px){.part-control-grid .knob-unit{flex:0 0 39px;width:39px}.part-control-grid .knob{width:37px;height:37px}.part-control-grid .knob-label{font-size:9px}.part-control-grid{grid-template-columns:minmax(94px,1fr) auto;gap:3px}}
+/* v4: equal halves for Octave Shift and the three sound knobs. */
+.part-control-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.part-control-grid .knob-pair{justify-content:space-evenly;gap:4px;min-width:0}
+.part-control-grid .knob-unit{flex:0 1 56px;min-width:0;width:auto}
+.part-control-grid .knob{width:46px;height:46px}
+@media(max-width:480px){.part-control-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.part-control-grid .knob-pair{gap:3px}.part-control-grid .knob-unit{flex:0 1 48px;min-width:0;width:auto}.part-control-grid .knob{width:42px;height:42px}.part-control-grid .knob-label{font-size:10px}}
+@media(max-width:360px){.part-control-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}.part-control-grid .knob-unit{flex:0 1 40px;min-width:0;width:auto}.part-control-grid .knob{width:37px;height:37px}.part-control-grid .knob-label{font-size:9px}}
 </style></head>
 <body><div class="wrap"><header class="top"><div class="brand">GO:PIANO Performance Editor</div><div class="status hidden" id="midiStatus">Not connected</div></header><main>
 <section class="card"><div class="cardhead">MIDI</div><div class="midirow"><div class="field"><label for="midiOutput">Device</label><select id="midiOutput"><option value="">Not connected</option></select></div><button class="btn" id="connectBtn">Connect</button></div><div class="hidden" id="midiNotice"></div></section>
@@ -383,11 +383,19 @@ function slotLabel(i){const n=presetNames[i];return String(i+1).padStart(2,'0')+
 function updateSelects(preserve=true){const sel=$('presetSelect'),prev=sel.value;
  // Before receiving the Temporary Performance name, the field must be blank and inactive.
  if(!deviceVerified||!currentLoaded){sel.replaceChildren();sel.disabled=true;$('savePresetBtn').disabled=true;$('readBtn').disabled=!deviceVerified;return;}
+ const selected=preserve&&(prev==='empty'||/^\d+$/.test(prev)&&Number(prev)<32)?prev:'current';
  sel.replaceChildren();
  const empty=document.createElement('option');empty.value='empty';empty.textContent='Empty';sel.appendChild(empty);
- const current=document.createElement('option');current.value='current';current.textContent=temporaryName;sel.appendChild(current);
  for(let i=0;i<32;i++){const o=document.createElement('option');o.value=String(i);o.textContent=slotLabel(i);o.disabled=presetNames[i]===null;sel.appendChild(o);}
- sel.value=preserve&&[...sel.options].some(o=>o.value===prev)?prev:'current';sel.disabled=false;
+ // Temporary Performance is a display-only selection, not an item in the menu.
+ // Add it only while the current unslotted Performance is displayed, and keep it
+ // hidden from the dropdown to avoid duplicating a numbered name or Empty.
+ if(selected==='current'){
+  const current=document.createElement('option');current.value='current';
+  current.textContent=temporaryName||'(unnamed)';current.hidden=true;current.disabled=true;
+  sel.appendChild(current);
+ }
+ sel.value=selected;sel.disabled=false;
  const sav=$('saveSlot'),sPrev=sav.value;fillSelect(sav,Array.from({length:32},(_,i)=>i),String,i=>slotLabel(i));sav.value=sPrev&&Number(sPrev)<32?sPrev:'0';
  $('savePresetBtn').disabled=!fullyRead();$('readBtn').disabled=false;
 }
@@ -619,17 +627,26 @@ function recallSlot(slot){const ch=0;const out=chosenMidiOutput();if(!out)return
  sendData([0xB0|ch,0,0x55]);sendData([0xB0|ch,0x20,0]);sendData([0xC0|ch,slot]);
  status('Recalling User Performance '+(slot+1)+'…');clearTimeout(recallReadTimer);recallReadTimer=setTimeout(readCurrent,500);
 }
-async function sendDump(lines,label){const out=chosenMidiOutput();if(!out)return;status('Sending '+label+'…');
+async function sendDump(lines,label,resetMod=false){const out=chosenMidiOutput();if(!out)return;status('Sending '+label+'…');
  for(let i=0;i<lines.length;i++){
   if(out!==chosenMidiOutput())return;
   if(!sendData(parseHex(lines[i])))return;
   // Slow down larger transfers on BLE, especially their final block.
   await new Promise(resolve=>setTimeout(resolve,out===bleMidiOutput?45:18));
  }
- if(out===bleMidiOutput)await bleWriteQueue;status(label+' sent. Reading instrument…');setTimeout(readCurrent,out===bleMidiOutput?300:450);
+ if(out===bleMidiOutput)await bleWriteQueue;
+ if(out!==chosenMidiOutput())return;
+ if(resetMod){
+  // App-side Empty Performance loading bypasses the piano's Patch Remain reset.
+  // Clear modulation explicitly on all four MIDI Parts after the dump completes.
+  for(let ch=0;ch<4;ch++)if(!sendData([0xB0|ch,0x01,0x00]))return;
+  modWheelPosition=0;syncModWheel();
+  if(out===bleMidiOutput)await bleWriteQueue;
+ }
+ status(label+' sent. Reading instrument…');setTimeout(readCurrent,out===bleMidiOutput?300:450);
 }
-$('presetSelect').addEventListener('change',()=>{const value=$('presetSelect').value;if(value==='current')return;
- if(value==='empty'){sendDump(EMPTY_DUMP,'Empty Performance');return;}if(/^\d+$/.test(value))recallSlot(Number(value));});
+$('presetSelect').addEventListener('change',()=>{const value=$('presetSelect').value;if(value==='current')return;updateSelects(true);
+ if(value==='empty'){sendDump(EMPTY_DUMP,'Empty Performance',true);return;}if(/^\d+$/.test(value))recallSlot(Number(value));});
 function replaceTemplate(text,slot,name){const map={
  '[hex PerformanceNumber минус 1]':hex(slot),
  '[12 байтов PerformanceName]':Array.from(name.padEnd(12,' ')).map(x=>hex(x.charCodeAt(0))).join(' '),
